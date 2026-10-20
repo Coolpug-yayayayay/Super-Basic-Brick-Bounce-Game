@@ -19,18 +19,18 @@ function boxesTouch(a, b) {
 
 // The ball bounces off the left, right, and top walls.
 // (The bottom is not a wall: falling off the bottom resets the ball.)
-function bounceOffWalls() {
-  if (ball.x < 0) {
-    ball.x = 0;
-    ball.vx = -ball.vx;
+function bounceOffWalls(currentBall = ball) {
+  if (currentBall.x < 0) {
+    currentBall.x = 0;
+    currentBall.vx = -currentBall.vx;
   }
-  if (ball.x + ball.width > WIDTH) {
-    ball.x = WIDTH - ball.width;
-    ball.vx = -ball.vx;
+  if (currentBall.x + currentBall.width > WIDTH) {
+    currentBall.x = WIDTH - currentBall.width;
+    currentBall.vx = -currentBall.vx;
   }
-  if (ball.y < 0) {
-    ball.y = 0;
-    ball.vy = -ball.vy;
+  if (currentBall.y < 0) {
+    currentBall.y = 0;
+    currentBall.vy = -currentBall.vy;
   }
 }
 
@@ -38,41 +38,111 @@ function bounceOffWalls() {
 // The ball bounces off the top of the paddle.
 // ball.vy > 0 means "the ball is moving down", so it only bounces
 // when it is falling onto the paddle.
-function bounceOffPaddle() {
-  if (boxesTouch(ball, paddle) && ball.vy > 0) {
-    ball.y = paddle.y - ball.height;  // sit on top of the paddle
-    ball.vy = -ball.vy;
+function bounceOffPaddle(currentBall = ball) {
+  if (boxesTouch(currentBall, paddle) && currentBall.vy > 0) {
+    currentBall.y = paddle.y - currentBall.height;  // sit on top of the paddle
+    currentBall.vy = -currentBall.vy;
   }
 }
 
 
-// The ball bounces off the bricks. Nothing happens to the brick yet.
-function bounceOffBricks() {
-  for (const brick of bricks) {
-    if (!boxesTouch(ball, brick)) {
+function triggerTntBlast(targetIndex) {
+  const targetBrick = bricks[targetIndex];
+  const blastCenterX = targetBrick.x + targetBrick.width / 2;
+  const blastCenterY = targetBrick.y + targetBrick.height / 2;
+
+  for (let i = bricks.length - 1; i >= 0; i--) {
+    const brick = bricks[i];
+    const brickCenterX = brick.x + brick.width / 2;
+    const brickCenterY = brick.y + brick.height / 2;
+    const distanceX = Math.abs(brickCenterX - blastCenterX);
+    const distanceY = Math.abs(brickCenterY - blastCenterY);
+
+    if (distanceX <= BRICK_WIDTH + BRICK_GAP && distanceY <= BRICK_HEIGHT + BRICK_GAP) {
+      if (brick.isLife) {
+        awardExtraLife(2);
+      }
+      bricks.splice(i, 1);
+    }
+  }
+}
+
+// The ball bounces off bricks, which disappear after two hits.
+function bounceOffBricks(currentBall = ball) {
+  for (let i = 0; i < bricks.length; i++) {
+    const brick = bricks[i];
+    if (!boxesTouch(currentBall, brick)) {
       continue;  // not touching this brick, check the next one
     }
 
     // How far has the ball pushed into the brick on each side?
-    const overlapX = Math.min(ball.x + ball.width, brick.x + brick.width) - Math.max(ball.x, brick.x);
-    const overlapY = Math.min(ball.y + ball.height, brick.y + brick.height) - Math.max(ball.y, brick.y);
+    const overlapX = Math.min(currentBall.x + currentBall.width, brick.x + brick.width) - Math.max(currentBall.x, brick.x);
+    const overlapY = Math.min(currentBall.y + currentBall.height, brick.y + brick.height) - Math.max(currentBall.y, brick.y);
 
     if (overlapX < overlapY) {
       // The ball hit the brick's left or right side.
-      ball.vx = -ball.vx;
-      if (ball.x < brick.x) {
-        ball.x = brick.x - ball.width;     // left of the brick
+      currentBall.vx = -currentBall.vx;
+      if (currentBall.x < brick.x) {
+        currentBall.x = brick.x - currentBall.width;     // left of the brick
       } else {
-        ball.x = brick.x + brick.width;    // right of the brick
+        currentBall.x = brick.x + brick.width;    // right of the brick
       }
     } else {
       // The ball hit the brick's top or bottom.
-      ball.vy = -ball.vy;
-      if (ball.y < brick.y) {
-        ball.y = brick.y - ball.height;    // above the brick
+      currentBall.vy = -currentBall.vy;
+      if (currentBall.y < brick.y) {
+        currentBall.y = brick.y - currentBall.height;    // above the brick
       } else {
-        ball.y = brick.y + brick.height;   // below the brick
+        currentBall.y = brick.y + brick.height;  // below the brick
       }
+    }
+
+    if (brick.isBonus && !brick.bonusGiven) {
+      brick.bonusGiven = true;
+      balls.push({
+        x: currentBall.x,
+        y: currentBall.y,
+        width: currentBall.width,
+        height: currentBall.height,
+        vx: currentBall.vx > 0 ? -BALL_SPEED : BALL_SPEED,
+        vy: -BALL_SPEED,
+        isBonus: true
+      });
+    }
+
+    if (brick.isBlueBonus && !brick.bonusGiven) {
+      brick.bonusGiven = true;
+      blueBonusActive = true;
+      blueFinalBallSpawned = false;
+      for (const direction of [-1, 0, 1]) {
+        balls.push({
+          x: currentBall.x,
+          y: currentBall.y,
+          width: currentBall.width,
+          height: currentBall.height,
+          vx: direction * BALL_SPEED,
+          vy: -BALL_SPEED,
+          isBonus: false,
+          isBlue: true
+        });
+      }
+    }
+
+    if (brick.isTnt) {
+      triggerTntBlast(i);
+      break;
+    }
+
+    if (brick.isLife) {
+      awardExtraLife(2);
+    }
+
+    brick.hits--;
+    if (brick.hits === 0) {
+      if (brick.isSpeed) {
+        paddle.speed += 2;
+      }
+      bricks.splice(i, 1);
     }
 
     break;  // bounce off one brick per update, then stop looking
