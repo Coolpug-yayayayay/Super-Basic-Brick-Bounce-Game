@@ -46,7 +46,50 @@ function bounceOffPaddle(currentBall = ball) {
 }
 
 
-function triggerTntBlast(targetIndex) {
+function applyBrickHitEffects(brick, currentBall) {
+  if (brick.isBonus && !brick.bonusGiven) {
+    brick.bonusGiven = true;
+    balls.push({
+      x: currentBall.x,
+      y: currentBall.y,
+      width: currentBall.width,
+      height: currentBall.height,
+      vx: currentBall.vx > 0 ? -BONUS_BALL_SPEED : BONUS_BALL_SPEED,
+      vy: -BONUS_BALL_SPEED,
+      isBonus: true
+    });
+  }
+
+  if (brick.isBlueBonus && !brick.bonusGiven) {
+    brick.bonusGiven = true;
+    blueBonusActive = true;
+    blueFinalBallSpawned = false;
+    for (const direction of [-1, 0, 1]) {
+      balls.push({
+        x: currentBall.x,
+        y: currentBall.y,
+        width: currentBall.width,
+        height: currentBall.height,
+        vx: direction * BONUS_BALL_SPEED,
+        vy: -BONUS_BALL_SPEED,
+        isBonus: false,
+        isBlue: true
+      });
+    }
+  }
+
+  if (brick.isLife) {
+    awardExtraLife(2);
+  }
+}
+
+function applyBrickDestructionEffects(brick) {
+  if (brick.isSpeed) {
+    paddle.speed += 2;
+  }
+}
+
+function triggerTntBlast(targetIndex, currentBall) {
   const targetBrick = bricks[targetIndex];
   const blastCenterX = targetBrick.x + targetBrick.width / 2;
   const blastCenterY = targetBrick.y + targetBrick.height / 2;
@@ -59,9 +102,8 @@ function triggerTntBlast(targetIndex) {
     const distanceY = Math.abs(brickCenterY - blastCenterY);
 
     if (distanceX <= BRICK_WIDTH + BRICK_GAP && distanceY <= BRICK_HEIGHT + BRICK_GAP) {
-      if (brick.isLife) {
-        awardExtraLife(2);
-      }
+      applyBrickHitEffects(brick, currentBall);
+      applyBrickDestructionEffects(brick);
       bricks.splice(i, 1);
     }
   }
@@ -97,51 +139,16 @@ function bounceOffBricks(currentBall = ball) {
       }
     }
 
-    if (brick.isBonus && !brick.bonusGiven) {
-      brick.bonusGiven = true;
-      balls.push({
-        x: currentBall.x,
-        y: currentBall.y,
-        width: currentBall.width,
-        height: currentBall.height,
-        vx: currentBall.vx > 0 ? -BALL_SPEED : BALL_SPEED,
-        vy: -BALL_SPEED,
-        isBonus: true
-      });
-    }
-
-    if (brick.isBlueBonus && !brick.bonusGiven) {
-      brick.bonusGiven = true;
-      blueBonusActive = true;
-      blueFinalBallSpawned = false;
-      for (const direction of [-1, 0, 1]) {
-        balls.push({
-          x: currentBall.x,
-          y: currentBall.y,
-          width: currentBall.width,
-          height: currentBall.height,
-          vx: direction * BALL_SPEED,
-          vy: -BALL_SPEED,
-          isBonus: false,
-          isBlue: true
-        });
-      }
-    }
+    applyBrickHitEffects(brick, currentBall);
 
     if (brick.isTnt) {
-      triggerTntBlast(i);
+      triggerTntBlast(i, currentBall);
       break;
-    }
-
-    if (brick.isLife) {
-      awardExtraLife(2);
     }
 
     brick.hits--;
     if (brick.hits === 0) {
-      if (brick.isSpeed) {
-        paddle.speed += 2;
-      }
+      applyBrickDestructionEffects(brick);
       bricks.splice(i, 1);
     }
 

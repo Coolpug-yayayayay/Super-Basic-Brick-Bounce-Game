@@ -20,6 +20,7 @@ const HEIGHT = canvas.height; // 450
 // A positive vy means the ball is moving DOWN the screen.
 // ------------------------------------------------------------
 const BALL_SPEED = 5;
+const BONUS_BALL_SPEED = BALL_SPEED - 1;
 const STARTING_LIVES = 3;
 const STARTING_PADDLE_SPEED = 7;
 
@@ -220,8 +221,8 @@ function update() {
             y: paddle.y - ball.height,
             width: ball.width,
             height: ball.height,
-            vx: BALL_SPEED * paddleDirection,
-            vy: -BALL_SPEED,
+            vx: BONUS_BALL_SPEED * paddleDirection,
+            vy: -BONUS_BALL_SPEED,
             isBonus: false,
             isBlue: true,
             isFinalBlue: true

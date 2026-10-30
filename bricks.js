@@ -31,7 +31,8 @@ function makeBricks(levelNumber) {
   const left = (WIDTH - totalWidth) / 2;
   const slots = [];
   const types = [
-    ...Array(config.regular).fill("#"),
+    ...Array(config.regular - 15).fill("#"),
+    ...Array(15).fill("R"),
     "G", "G", "B", "Y", "T", "L"
   ];
 
@@ -51,12 +52,13 @@ function makeBricks(levelNumber) {
       y: 50 + row * (BRICK_HEIGHT + BRICK_GAP),
       width: BRICK_WIDTH,
       height: BRICK_HEIGHT,
-      hits: type === "T" || type === "L" ? 1 : BRICK_HITS,
+      hits: type === "R" || type === "T" || type === "L" ? 1 : BRICK_HITS,
       isBonus: type === "G",
       isBlueBonus: type === "B",
       isTnt: type === "T",
       isLife: type === "L",
       isSpeed: type === "Y",
+      isGray: type === "R",
       bonusGiven: false
     });
   }
@@ -77,6 +79,8 @@ function drawBricks() {
       ctx.fillStyle = brick.hits === BRICK_HITS ? "#3399ff" : "#145a9e";
     } else if (brick.isSpeed) {
       ctx.fillStyle = "#ffff00";
+    } else if (brick.isGray) {
+      ctx.fillStyle = "#999";
     } else {
       ctx.fillStyle = brick.hits === BRICK_HITS ? "white" : "#555";
     }
