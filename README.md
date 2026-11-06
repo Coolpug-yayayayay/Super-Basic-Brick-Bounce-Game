@@ -1,1 +1,3 @@
 # Super-Basic-Brick-Bounce-Game
+
+Most bricks take two hits: they darken after the first hit and disappear after the second. Each level also has 15 gray bricks that break in one hit. Clear all five levels to win; you have three lives, restored when you advance to a new level. Your current level is saved in the browser, and pressing R after losing lets you retry that same level. Each level has two green bonus bricks that create a green ball when hit. Bonus balls can break bricks, but falling bonus balls do not cost a life.
