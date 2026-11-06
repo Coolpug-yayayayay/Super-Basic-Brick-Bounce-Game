@@ -94,10 +94,8 @@ function loadSavedLevel() {
     return 1;
   }
 
-  const savedLevel = Number(localStorage.getItem(SAVED_LEVEL_KEY));
-  return Number.isInteger(savedLevel) && savedLevel >= 1 && savedLevel <= LEVEL_CONFIGS.length
-    ? savedLevel
-    : 1;
+  localStorage.setItem(SAVED_LEVEL_KEY, "1");
+  return 1;
 }
 
 function showMessage(text, action) {
@@ -205,6 +203,7 @@ function update() {
     return;
   }
 
+  moveBricks();
   movePaddle();
   for (const currentBall of [...balls]) {
     moveBall(currentBall);

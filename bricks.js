@@ -6,6 +6,8 @@ const BRICK_WIDTH = 60;
 const BRICK_HEIGHT = 20;
 const BRICK_GAP = 6;     // empty space between bricks
 const BRICK_HITS = 2;
+const BRICK_MOVE_INTERVAL = 6;
+let brickMoveTicks = 0;
 
 const LEVEL_CONFIGS = [
   { rows: 5, regular: 28 },
@@ -64,6 +66,23 @@ function makeBricks(levelNumber) {
   }
 
   return list;
+}
+
+function moveBricks() {
+  brickMoveTicks++;
+  if (brickMoveTicks < BRICK_MOVE_INTERVAL) {
+    return;
+  }
+  brickMoveTicks = 0;
+
+  const moveAmount = level;
+
+  for (const brick of bricks) {
+    brick.x += moveAmount;
+    if (brick.x >= WIDTH) {
+      brick.x = -brick.width;
+    }
+  }
 }
 
 // Draws every brick in the list.
