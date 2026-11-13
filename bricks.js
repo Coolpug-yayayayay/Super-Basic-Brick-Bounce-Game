@@ -61,7 +61,10 @@ function makeBricks(levelNumber) {
       isLife: type === "L",
       isSpeed: type === "Y",
       isGray: type === "R",
-      bonusGiven: false
+      bonusGiven: false,
+      shake: 0,
+      isBreaking: false,
+      breakTimer: 0
     });
   }
 
@@ -85,9 +88,33 @@ function moveBricks() {
   }
 }
 
+function updateBrickShakes() {
+  for (let i = bricks.length - 1; i >= 0; i--) {
+    const brick = bricks[i];
+    if (brick.shake > 0) {
+      brick.shake *= 0.82;
+      if (brick.shake < 0.2) {
+        brick.shake = 0;
+      }
+    }
+
+    if (brick.isBreaking) {
+      brick.breakTimer -= 1;
+      if (brick.breakTimer <= 0) {
+        bricks.splice(i, 1);
+      }
+    }
+  }
+}
+
 // Draws every brick in the list.
 function drawBricks() {
   for (const brick of bricks) {
+    const shakeX = brick.shake > 0 ? (Math.random() - 0.5) * brick.shake * 2.5 : 0;
+    const shakeY = brick.shake > 0 ? (Math.random() - 0.5) * brick.shake * 2.5 : 0;
+    const drawX = brick.x + shakeX;
+    const drawY = brick.y + shakeY;
+
     if (brick.isTnt) {
       ctx.fillStyle = "#ff3b30";
     } else if (brick.isLife) {
@@ -103,6 +130,11 @@ function drawBricks() {
     } else {
       ctx.fillStyle = brick.hits === BRICK_HITS ? "white" : "#555";
     }
-    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+
+    if (brick.isBreaking) {
+      ctx.globalAlpha = Math.max(0.2, brick.breakTimer / 8);
+    }
+    ctx.fillRect(drawX, drawY, brick.width, brick.height);
+    ctx.globalAlpha = 1;
   }
 }

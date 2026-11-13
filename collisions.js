@@ -23,14 +23,17 @@ function bounceOffWalls(currentBall = ball) {
   if (currentBall.x < 0) {
     currentBall.x = 0;
     currentBall.vx = -currentBall.vx;
+    emitCollisionSparks(currentBall.x + currentBall.width / 2, currentBall.y + currentBall.height / 2, getBallColor(currentBall), 8);
   }
   if (currentBall.x + currentBall.width > WIDTH) {
     currentBall.x = WIDTH - currentBall.width;
     currentBall.vx = -currentBall.vx;
+    emitCollisionSparks(currentBall.x + currentBall.width / 2, currentBall.y + currentBall.height / 2, getBallColor(currentBall), 8);
   }
   if (currentBall.y < 0) {
     currentBall.y = 0;
     currentBall.vy = -currentBall.vy;
+    emitCollisionSparks(currentBall.x + currentBall.width / 2, currentBall.y + currentBall.height / 2, getBallColor(currentBall), 8);
   }
 }
 
@@ -42,6 +45,7 @@ function bounceOffPaddle(currentBall = ball) {
   if (boxesTouch(currentBall, paddle) && currentBall.vy > 0) {
     currentBall.y = paddle.y - currentBall.height;  // sit on top of the paddle
     currentBall.vy = -currentBall.vy;
+    emitCollisionSparks(currentBall.x + currentBall.width / 2, currentBall.y + currentBall.height, getBallColor(currentBall), 12);
   }
 }
 
@@ -102,6 +106,7 @@ function triggerTntBlast(targetIndex, currentBall) {
     const distanceY = Math.abs(brickCenterY - blastCenterY);
 
     if (distanceX <= BRICK_WIDTH + BRICK_GAP && distanceY <= BRICK_HEIGHT + BRICK_GAP) {
+      emitBrickBreakParticles(brick);
       applyBrickHitEffects(brick, currentBall);
       applyBrickDestructionEffects(brick);
       bricks.splice(i, 1);
@@ -113,7 +118,7 @@ function triggerTntBlast(targetIndex, currentBall) {
 function bounceOffBricks(currentBall = ball) {
   for (let i = 0; i < bricks.length; i++) {
     const brick = bricks[i];
-    if (!boxesTouch(currentBall, brick)) {
+    if (brick.isBreaking || !boxesTouch(currentBall, brick)) {
       continue;  // not touching this brick, check the next one
     }
 
@@ -139,6 +144,8 @@ function bounceOffBricks(currentBall = ball) {
       }
     }
 
+    brick.shake = Math.max(brick.shake || 0, 1.8);
+    emitCollisionSparks(currentBall.x + currentBall.width / 2, currentBall.y + currentBall.height / 2, getBallColor(currentBall), 12);
     applyBrickHitEffects(brick, currentBall);
 
     if (brick.isTnt) {
@@ -148,8 +155,12 @@ function bounceOffBricks(currentBall = ball) {
 
     brick.hits--;
     if (brick.hits === 0) {
+      brick.shake = Math.max(brick.shake || 0, 6.5);
+      brick.isBreaking = true;
+      brick.breakTimer = 8;
+      emitBrickBreakParticles(brick);
       applyBrickDestructionEffects(brick);
-      bricks.splice(i, 1);
+      break;
     }
 
     break;  // bounce off one brick per update, then stop looking
